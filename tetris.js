@@ -11,19 +11,14 @@ export class Tetris extends Scene {
 
 
         //initialization
-        this.grid = [
-
-            [1, 2, 3, 4, 5, 6, 7],
-            [1, 2, 3, 4, 5, 6, 7],
-            [1, 2, 3, 4, 5, 6, 7],
-            [1, 2, 3, 4, 5, 6, 7],
-        ]
-        this.gR = new GridRenderer(this.grid.length, this.grid[0].length, this.grid, 3);
+        this.game_manager = new GameManager();
+        this.gR = new GridRenderer(this.game_manager.getNumRows(), this.game_manager.getNumColumns(), 3);
         this.time = 0;
 
     }
     make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
-        //put input controller here
+        this.key_triggered_button("Move right", ["d"], this.game_manager.translateMovingBlocksHorizontally("RIGHT"));
+        this.key_triggered_button("Move left", ["a"], this.game_manager.translateMovingBlocksHorizontally("LEFT"));
     }
     display(context, program_state) {                                                // display():  Called once per frame of animation
 
@@ -50,41 +45,166 @@ export class Tetris extends Scene {
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000000)];
 
 
-
-        //simple animation
+        // *** Game Logic ***
         this.time = this.time + dt;
-        //defined in ticks/second
-        let tickRate = 5;
-        if (this.time > 1 / tickRate) {
+        // 1 tick = 1 seconds
+        let tickRate = 1;
+        if (this.time > tickRate) {
             this.time = 0;
 
-            let newGrid = this.grid;
-            for (let r = 0; r < this.grid.length; r++) {
-                for (let c = 0; c < this.grid[0].length; c++) {
-
-                    this.grid[r][c] = (this.grid[r][c] + 1) % 7;
-
-
-
-                }
+            // TODO: Check if there is a collision
+            if (this.game_manager.isFallingBlocks()) {
+                this.game_manager.translateMovingBlocksDown();
             }
-            this.grid = newGrid;
-            this.gR.updateGrid(this.grid);
+            else {
+                // Spawn block
+                this.game_manager.generateBlock(); 
+            }
         }
-        this.gR.displayGrid(context, program_state, Mat4.identity);
+        this.gR.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
     }
 }
 
+// Class that handles game logic and contains game grid
+class GameManager {
+    constructor() {
+        // 20 x 7 grid layout
+        this.GRID = [
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0]
+        ]
+        // Number of Rows
+        this.ROWS = 20;
+        // Number of Columns
+        this.COLUMNS = 7;
+    }
+    
+    // Accessor functions
+    getGrid() {
+        return this.GRID;
+    }
+    getNumRows() {
+        return this.ROWS;
+    }
+    getNumColumns() {
+        return this.NUM_COLS;
+    }
 
+    // Checks if there are any positive (falling blocks) in the grid
+    isFallingBlocks() {
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (this.GRID[r][c] > 0)
+                    return true;
+            }
+        }
+        return false;
+    }
 
+    // Create a block at the top row
+    generateBlock() {
+        let block = Math.floor(Math.random() * 8+1)
+        this.GRID[0][this.COLUMNS / 2] = block;
+    } 
+    
+    // Shift all moving blocks (positive) down until
+    // they collide with another block or reach the bottom
+    // TODO: Need to implement support for connected blocks
+    translateMovingBlocksDown() {
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (this.GRID[r][c] > 0){
+                    if (r+1 < this.ROWS && this.GRID[r+1][c] == 0) {
+                        this.GRID[r+1][c] = this.GRID[r][c];
+                        this.GRID[r][c] = 0;
+                    }
+                }
+                    
+            }
+        }
+    }
+
+    // Change all moving blocks to static (negative)
+    changeBlocksToStatic() {
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (this.GRID[r][c] > 0)
+                    this.GRID[r][c] *= -1;
+            }
+        }
+    }
+
+    // Clear bottom row and shift down all static rows down
+    // Only if all blocks at the bottom are the same color
+    clearBottomRow() {
+        if (checkRowIsSame(this.ROWS-1)) {
+            for (let r = this.ROWS-2; r >= 0; r--) {
+                for (let c = 0; c < this.COLUMNS; c++) {
+                    if (this.GRID[r][c] <= 0)
+                        this.GRID[r][c+1] = this.GRID[r][c];
+                }
+            }
+        }
+    }
+    
+    // Check if all blocks at a given row is the same
+    checkRowIsSame(row) {
+        for (let c = 0; c < this.COLUMNS-1; c++) {
+            if (this.GRID[row][c] != this.GRID[row][c+1] ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Translate moving blocks horizontally. Takes one argument direction (LEFT, RIGHT)
+    translateMovingBlocksHorizontally(dir) {
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (this.GRID[r][c] > 0) {
+                    if (dir == "LEFT") {
+                        if (c-1 >= 0 && this.GRID[r][c-1] == 0) {
+                            this.GRID[r][c-1] = this.GRID[r][c];
+                            this.GRID[r][c] = 0;
+                        }
+                    }
+                    if (dir == "RIGHT") {
+                        if (c+1 < this.COLUMNS && this.GRID[r][c+1] == 0) {
+                            this.GRID[r][c+1] = this.GRID[r][c];
+                            this.GRID[r][c] = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
 
 class GridRenderer {
 
 
-    constructor(r, c, g, scale) {
+    constructor(r, c, scale) {
         this.NUM_ROWS = r;
         this.NUM_COLS = c;
-        this.grid = g;
         this.cubeSize = scale;
 
 
@@ -99,14 +219,10 @@ class GridRenderer {
             plastic: new Material(phong,
                 { ambient: .2, diffusivity: 1, specularity: .5, color: color(.9, .5, .9, 1) }),
         };
-    };
-
-    //change the grid state
-    updateGrid(g) {
-        this.grid = g;
     }
 
-    displayGrid(context, program_state, identity) {
+
+    displayGrid(context, program_state, identity, grid) {
 
         let cube_transform;
         let cubeGap = 2.5;
@@ -116,7 +232,7 @@ class GridRenderer {
                 //render a cube in the correct positions
 
                 //if we have a non-empty spot
-                if (this.grid[r][c] != 0) {
+                if (grid[r][c] != 0) {
 
                     cube_transform = Mat4.identity();
                     //find the correct position
@@ -126,7 +242,7 @@ class GridRenderer {
                     cube_transform = cube_transform.times(Mat4.scale(this.cubeSize / cubeGap, this.cubeSize / cubeGap, this.cubeSize / cubeGap));
 
                     //get the correct color
-                    let boxColor = this.getColor(this.grid[r][c]);
+                    let boxColor = this.getColor(grid[r][c]);
 
                     //draw
                     this.shapes.box.draw(context, program_state, cube_transform, this.materials.plastic.override(boxColor));
