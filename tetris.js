@@ -12,7 +12,9 @@ export class Tetris extends Scene {
 
         //initialization
         this.game_manager = new GameManager();
+        console.log(this.game_manager);
         this.gR = new GridRenderer(this.game_manager.getNumRows(), this.game_manager.getNumColumns(), 3);
+        console.log(this.gR);
         this.time = 0;
 
     }
@@ -105,7 +107,7 @@ class GameManager {
         return this.ROWS;
     }
     getNumColumns() {
-        return this.NUM_COLS;
+        return this.COLUMNS;
     }
 
     // Checks if there are any positive (falling blocks) in the grid
@@ -121,8 +123,8 @@ class GameManager {
 
     // Create a block at the top row
     generateBlock() {
-        let block = Math.floor(Math.random() * 8+1)
-        this.GRID[0][this.COLUMNS / 2] = block;
+        let block = Math.floor((Math.random() * 8) + 1)
+        this.GRID[0][Math.floor(this.COLUMNS / 2)] = block;
     } 
     
     // Shift all moving blocks (positive) down until
@@ -135,11 +137,13 @@ class GameManager {
                     if (r+1 < this.ROWS && this.GRID[r+1][c] == 0) {
                         this.GRID[r+1][c] = this.GRID[r][c];
                         this.GRID[r][c] = 0;
+                        return;
                     }
                 }
                     
             }
         }
+        console.log(this.GRID);
     }
 
     // Change all moving blocks to static (negative)
