@@ -55,7 +55,6 @@ export class Tetris extends Scene {
         if (this.time > tickRate) {
             this.time = 0;
 
-            // TODO: Check if there is a collision
             if (this.game_manager.isFallingBlocks()) {
                 this.game_manager.translateMovingBlocksDown();
 
@@ -67,6 +66,9 @@ export class Tetris extends Scene {
             else {
                 // Spawn block
                 this.game_manager.generateShape();
+            }
+            if (this.game_manager.checkRowIsSame(this.game_manager.getNumRows()-1)) {
+                this.game_manager.clearBottomRow();
             }
         }
         this.gR.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
@@ -138,6 +140,7 @@ class GameManager {
     // Create a block at the top row
     generateBlock() {
         let block = Math.floor((Math.random() * 7) + 1)
+        // For testing clear block row
         this.GRID[0][Math.floor(this.COLUMNS / 2)] = block;
     }
 
@@ -148,7 +151,8 @@ class GameManager {
     //will probably refactor this to do something different
     generateShape() {
         let NUM_SHAPES = 4;
-        let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
+        //let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
+        let shape = 2;
         let middle = Math.floor(this.COLUMNS / 2);
         switch (shape) {
             //2x2 block
@@ -160,10 +164,10 @@ class GameManager {
                 break;
             //1x4 block
             case 2:
-                this.GRID[0][middle + 1] = shape;
                 this.GRID[0][middle] = shape;
-                this.GRID[0][middle - 1] = shape;
-                this.GRID[0][middle - 2] = shape;
+                this.GRID[1][middle] = shape;
+                this.GRID[2][middle] = shape;
+                this.GRID[3][middle] = shape;
                 break;
             //l-shape
             case 3:
@@ -238,28 +242,30 @@ class GameManager {
         }
     }
 
-    // Clear bottom row and shift down all static rows down
-    // Only if all blocks at the bottom are the same color
-    clearBottomRow() {
-        if (checkRowIsSame(this.ROWS - 1)) {
-            for (let r = this.ROWS - 2; r >= 0; r--) {
-                for (let c = 0; c < this.COLUMNS; c++) {
-                    if (this.GRID[r][c] <= 0)
-                        this.GRID[r][c + 1] = this.GRID[r][c];
-                }
-            }
-        }
-    }
-
     // Check if all blocks at a given row is the same
     checkRowIsSame(row) {
         for (let c = 0; c < this.COLUMNS - 1; c++) {
-            if (this.GRID[row][c] != this.GRID[row][c + 1]) {
+            if (this.GRID[row][c] != this.GRID[row][c + 1] || this.GRID[row][c] == 0) {
                 return false;
             }
         }
         return true;
     }
+
+    // Clear bottom row and shift down all static rows down
+    // Only if all blocks at the bottom are the same color
+    clearBottomRow() {
+        if (this.checkRowIsSame(this.ROWS - 1)) {
+            for (let r = this.ROWS - 2; r >= 0; r--) {
+                for (let c = 0; c < this.COLUMNS; c++) {
+                    if (this.GRID[r][c] <= 0)
+                        this.GRID[r+1][c] = this.GRID[r][c];
+                }
+            }
+        }
+    }
+
+    
 
     // Translate moving blocks horizontally. Takes one argument direction (LEFT, RIGHT)
     translateMovingBlocksHorizontally(dir) {
