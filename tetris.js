@@ -19,8 +19,8 @@ export class Tetris extends Scene {
 
     }
     make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
-        this.key_triggered_button("Move right", ["d"], this.game_manager.translateMovingBlocksHorizontally("RIGHT"));
-        this.key_triggered_button("Move left", ["a"], this.game_manager.translateMovingBlocksHorizontally("LEFT"));
+        this.key_triggered_button("Move right", [ "k" ], () => { this.game_manager.translateMovingBlocksHorizontally("RIGHT") });
+        this.key_triggered_button("Move left", [ "j" ], () => { this.game_manager.translateMovingBlocksHorizontally("LEFT") });
     }
     display(context, program_state) {                                                // display():  Called once per frame of animation
 
@@ -57,6 +57,11 @@ export class Tetris extends Scene {
             // TODO: Check if there is a collision
             if (this.game_manager.isFallingBlocks()) {
                 this.game_manager.translateMovingBlocksDown();
+        
+                if (this.game_manager.getCollision()) {
+                   this.game_manager.changeBlocksToStatic();
+                   this.game_manager.setCollision(false);
+                }
             }
             else {
                 // Spawn block
@@ -97,9 +102,14 @@ class GameManager {
         this.ROWS = 20;
         // Number of Columns
         this.COLUMNS = 7;
+        // Collision Flag
+        this.COLLISION = false;
     }
     
     // Accessor functions
+    getCollision() {
+        return this.COLLISION;
+    }
     getGrid() {
         return this.GRID;
     }
@@ -108,6 +118,9 @@ class GameManager {
     }
     getNumColumns() {
         return this.COLUMNS;
+    }
+    setCollision(val) {
+        return this.COLLISION = val;
     }
 
     // Checks if there are any positive (falling blocks) in the grid
@@ -123,7 +136,7 @@ class GameManager {
 
     // Create a block at the top row
     generateBlock() {
-        let block = Math.floor((Math.random() * 8) + 1)
+        let block = Math.floor((Math.random() * 7) + 1)
         this.GRID[0][Math.floor(this.COLUMNS / 2)] = block;
     } 
     
@@ -138,6 +151,9 @@ class GameManager {
                         this.GRID[r+1][c] = this.GRID[r][c];
                         this.GRID[r][c] = 0;
                         return;
+                    }
+                    else {
+                        this.COLLISION = true;
                     }
                 }
                     
@@ -188,13 +204,18 @@ class GameManager {
                         if (c-1 >= 0 && this.GRID[r][c-1] == 0) {
                             this.GRID[r][c-1] = this.GRID[r][c];
                             this.GRID[r][c] = 0;
+                            return;
                         }
                     }
-                    if (dir == "RIGHT") {
+                    else if (dir == "RIGHT") {
                         if (c+1 < this.COLUMNS && this.GRID[r][c+1] == 0) {
                             this.GRID[r][c+1] = this.GRID[r][c];
                             this.GRID[r][c] = 0;
+                            return;
                         }
+                    }
+                    else {
+                        return;
                     }
                 }
             }
@@ -264,7 +285,7 @@ class GridRenderer {
     }
 
     getColor(index) {
-        switch (index) {
+        switch (Math.abs(index)) {
             case 1:
                 return color(1, 0, 0, 1);
             case 2:
