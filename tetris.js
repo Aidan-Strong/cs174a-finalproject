@@ -57,7 +57,6 @@ export class Tetris extends Scene {
 
             if (this.game_manager.isFallingBlocks()) {
                 this.game_manager.translateMovingBlocksDown();
-
                 if (this.game_manager.getCollision()) {
                     this.game_manager.changeBlocksToStatic();
                     this.game_manager.setCollision(false);
@@ -67,7 +66,7 @@ export class Tetris extends Scene {
                 // Spawn block
                 this.game_manager.generateShape();
             }
-            if (this.game_manager.checkRowIsSame(this.game_manager.getNumRows()-1)) {
+            if (this.game_manager.checkRowIsSame(this.game_manager.getNumRows() - 1)) {
                 this.game_manager.clearBottomRow();
             }
         }
@@ -144,10 +143,6 @@ class GameManager {
         this.GRID[0][Math.floor(this.COLUMNS / 2)] = block;
     }
 
-
-    rotate() {
-        //TODO
-    }
     //will probably refactor this to do something different
     generateShape() {
         let NUM_SHAPES = 4;
@@ -259,13 +254,13 @@ class GameManager {
             for (let r = this.ROWS - 2; r >= 0; r--) {
                 for (let c = 0; c < this.COLUMNS; c++) {
                     if (this.GRID[r][c] <= 0)
-                        this.GRID[r+1][c] = this.GRID[r][c];
+                        this.GRID[r + 1][c] = this.GRID[r][c];
                 }
             }
         }
     }
 
-    
+
 
     // Translate moving blocks horizontally. Takes one argument direction (LEFT, RIGHT)
     translateMovingBlocksHorizontally(dir) {
@@ -345,6 +340,101 @@ class GameManager {
         }
     }
 
+    //rotation
+    findRotation() {
+        let rotationPoint = new Point(0, 0, 0);
+
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (this.GRID[r][c] > 0) {
+                    rotationPoint = new Point(r, c, this.GRID[r][c]);
+                    break;
+                }
+
+            }
+        }
+
+
+
+        //figure out which shape we are dealing with
+        switch (rotationPoint.type) {
+            // //2x2
+            // case 1:
+            //     rotationPoint.c = 0;
+            //     rotationPoint.r = 0;
+
+
+            //1x4 block
+            case 2:
+                //see what orrientation it is already
+
+                //VERTICAL:
+                if (this.pointInGrid(rotationPoint.r + 1, rotationPoint.c) && this.GRID[rotationPoint.r + 1][rotationPoint.c] == 2) {
+                    rotationPoint.r += 1.5;
+                    rotationPoint.c -= 0.5;
+                    break;
+                }
+                //HORIZONTAL:
+                else {
+                    rotationPoint.r -= 0.5;
+                    rotationPoint.c += 1.5;
+                    break;
+                }
+
+        }
+        console.log("Rotation Point: (" + rotationPoint.r + "," + rotationPoint.c + ")");
+        return rotationPoint;
+
+
+    }
+
+
+    rotate() {
+        //find rotation point
+        let rotationPoint = this.findRotation();
+        console.log("Rotation Point: (" + rotationPoint.r + "," + rotationPoint.c + ")");
+
+        //deep copy it
+        let COPYGRID = deepCopy(this.GRID);
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (COPYGRID[r][c] > 0)
+                    COPYGRID[r][c] = 0;
+            }
+        }
+
+        //rotation bit
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (this.GRID[r][c] > 0) {
+                    //apply the rotation
+
+                    let rotatedC = (c - rotationPoint.c) * Math.cos(Math.PI / 2);
+                    rotatedC -= (r - rotationPoint.r) * Math.sin(Math.PI / 2);
+                    rotatedC += rotationPoint.c;
+                    rotatedC = Math.round(rotatedC);
+
+                    let rotatedR = (c - rotationPoint.c) * Math.sin(Math.PI / 2);
+                    rotatedR += (r - rotationPoint.r) * Math.cos(Math.PI / 2);
+                    rotatedR += rotationPoint.r;
+                    rotatedR = Math.round(rotatedR);
+
+                    COPYGRID[rotatedR][rotatedC] = this.GRID[r][c];
+                    console.log(rotatedR + "," + rotatedC)
+                    if (!this.pointInGrid(rotatedR, rotatedC) || COPYGRID[rotatedR][rotatedC] < 0) {
+                        return;
+                    }
+                }
+            }
+        }
+        this.GRID = COPYGRID;
+    }
+
+    pointInGrid(r, c) {
+        let rInGrid = r >= 0 && r < this.ROWS;
+        let cInGrid = c >= 0 && c < this.COLUMNS;
+        return rInGrid && cInGrid;
+    }
 }
 
 class GridRenderer {
@@ -464,3 +554,17 @@ const deepCopyObject = (obj) => {
     }
     return tempObj;
 }
+
+
+
+
+
+class Point {
+    constructor(rr, cc, t) {
+        this.r = rr;
+        this.c = cc;
+        this.type = t;
+    }
+}
+
+
