@@ -60,15 +60,17 @@ export class Tetris extends Scene {
 
                 if (this.game_manager.getCollision()) {
                     this.game_manager.changeBlocksToStatic();
+                    for (let i = 0; i < 4; i++) {
+                        if (this.game_manager.checkRowIsSame(this.game_manager.getNumRows()-1)) {
+                            this.game_manager.clearBottomRow();
+                        }
+                    }
                     this.game_manager.setCollision(false);
                 }
             }
             else {
                 // Spawn block
                 this.game_manager.generateShape();
-            }
-            if (this.game_manager.checkRowIsSame(this.game_manager.getNumRows()-1)) {
-                this.game_manager.clearBottomRow();
             }
         }
         this.gR.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
@@ -261,6 +263,9 @@ class GameManager {
                     if (this.GRID[r][c] <= 0)
                         this.GRID[r+1][c] = this.GRID[r][c];
                 }
+            }
+            for (let c = 0; c < this.COLUMNS; c++) {
+                this.GRID[0][c] = 0
             }
         }
     }
