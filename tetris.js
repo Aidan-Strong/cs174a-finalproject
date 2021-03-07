@@ -19,8 +19,9 @@ export class Tetris extends Scene {
 
     }
     make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
-        this.key_triggered_button("Move right", [ "k" ], () => { this.game_manager.translateMovingBlocksHorizontally("RIGHT") });
-        this.key_triggered_button("Move left", [ "j" ], () => { this.game_manager.translateMovingBlocksHorizontally("LEFT") });
+        this.key_triggered_button("Move right", ["k"], () => { this.game_manager.translateMovingBlocksHorizontally("RIGHT") });
+        this.key_triggered_button("Move left", ["j"], () => { this.game_manager.translateMovingBlocksHorizontally("LEFT") });
+        this.key_triggered_button("Rotate", ["i"], () => { this.game_manager.rotate() });
     }
     display(context, program_state) {                                                // display():  Called once per frame of animation
 
@@ -35,7 +36,7 @@ export class Tetris extends Scene {
             // treated when projecting 3D points onto a plane.  The Mat4 functions perspective() and
             // orthographic() automatically generate valid matrices for one.  The input arguments of
             // perspective() are field of view, aspect ratio, and distances to the near plane and far plane.
-            program_state.set_camera(Mat4.translation(-10, 10, -50));
+            program_state.set_camera(Mat4.translation(-10, 30, -95));
         }
         program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 100);
 
@@ -50,22 +51,22 @@ export class Tetris extends Scene {
         // *** Game Logic ***
         this.time = this.time + dt;
         // 1 tick = 1 seconds
-        let tickRate = 1;
+        let tickRate = 0.1;
         if (this.time > tickRate) {
             this.time = 0;
 
             // TODO: Check if there is a collision
             if (this.game_manager.isFallingBlocks()) {
                 this.game_manager.translateMovingBlocksDown();
-        
+
                 if (this.game_manager.getCollision()) {
-                   this.game_manager.changeBlocksToStatic();
-                   this.game_manager.setCollision(false);
+                    this.game_manager.changeBlocksToStatic();
+                    this.game_manager.setCollision(false);
                 }
             }
             else {
                 // Spawn block
-                this.game_manager.generateBlock(); 
+                this.game_manager.generateShape();
             }
         }
         this.gR.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
@@ -105,7 +106,7 @@ class GameManager {
         // Collision Flag
         this.COLLISION = false;
     }
-    
+
     // Accessor functions
     getCollision() {
         return this.COLLISION;
@@ -138,28 +139,93 @@ class GameManager {
     generateBlock() {
         let block = Math.floor((Math.random() * 7) + 1)
         this.GRID[0][Math.floor(this.COLUMNS / 2)] = block;
-    } 
-    
+    }
+
+
+    rotate() {
+        //TODO
+    }
+    //will probably refactor this to do something different
+    generateShape() {
+        let NUM_SHAPES = 4;
+        let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
+        let middle = Math.floor(this.COLUMNS / 2);
+        switch (shape) {
+            //2x2 block
+            case 1:
+                this.GRID[0][middle] = shape;
+                this.GRID[1][middle] = shape;
+                this.GRID[0][middle - 1] = shape;
+                this.GRID[1][middle - 1] = shape;
+                break;
+            //1x4 block
+            case 2:
+                this.GRID[0][middle + 1] = shape;
+                this.GRID[0][middle] = shape;
+                this.GRID[0][middle - 1] = shape;
+                this.GRID[0][middle - 2] = shape;
+                break;
+            //l-shape
+            case 3:
+                this.GRID[0][middle] = shape;
+                this.GRID[1][middle] = shape;
+                this.GRID[1][middle - 1] = shape;
+                this.GRID[1][middle - 2] = shape;
+                break;
+            //s-block
+            case 4:
+                this.GRID[0][middle] = shape;
+                this.GRID[0][middle - 1] = shape;
+                this.GRID[1][middle - 1] = shape;
+                this.GRID[1][middle - 2] = shape;
+
+        }
+    }
+
     // Shift all moving blocks (positive) down until
     // they collide with another block or reach the bottom
-    // TODO: Need to implement support for connected blocks
+    //TODO: Fix blocks not all stopping together (could just be done using two for loops)
     translateMovingBlocksDown() {
-        for (let r = 0; r < this.ROWS; r++) {
-            for (let c = 0; c < this.COLUMNS; c++) {
-                if (this.GRID[r][c] > 0){
-                    if (r+1 < this.ROWS && this.GRID[r+1][c] == 0) {
-                        this.GRID[r+1][c] = this.GRID[r][c];
-                        this.GRID[r][c] = 0;
+        for (let r = this.ROWS - 1; r >= 0; r--) {
+            for (let c = this.COLUMNS - 1; c >= 0; c--) {
+                //if the block is positive
+                if (this.GRID[r][c] > 0) {
+                    //if there is a blank spot below this move it
+                    if (!this.canMoveDown(r, c)) {
+                        this.COLLISION = true;
                         return;
                     }
-                    else {
-                        this.COLLISION = true;
-                    }
                 }
-                    
+
             }
         }
-        console.log(this.GRID);
+        //we know no collisions will occur, so actually move the blocks
+        for (let r = this.ROWS - 1; r >= 0; r--) {
+            for (let c = this.COLUMNS - 1; c >= 0; c--) {
+                //if the block is positive
+                if (this.GRID[r][c] > 0) {
+                    //if there is a blank spot below this move it
+                    if (this.canMoveDown(r, c)) {
+                        this.GRID[r + 1][c] = this.GRID[r][c];
+                        this.GRID[r][c] = 0;
+                    }
+                }
+
+            }
+        }
+    }
+
+    canMoveDown(row, col) {
+        if (row + 1 < this.ROWS) {
+            //if the space below us is empty, we can move down
+            if (this.GRID[row + 1][col] == 0)
+                return true;
+            if (this.GRID[row + 1][col] < 0)
+                return false;
+            //otherwise, lets see if that space can move down
+            return this.canMoveDown(row + 1, col);
+        }
+        return false;
     }
 
     // Change all moving blocks to static (negative)
@@ -175,20 +241,20 @@ class GameManager {
     // Clear bottom row and shift down all static rows down
     // Only if all blocks at the bottom are the same color
     clearBottomRow() {
-        if (checkRowIsSame(this.ROWS-1)) {
-            for (let r = this.ROWS-2; r >= 0; r--) {
+        if (checkRowIsSame(this.ROWS - 1)) {
+            for (let r = this.ROWS - 2; r >= 0; r--) {
                 for (let c = 0; c < this.COLUMNS; c++) {
                     if (this.GRID[r][c] <= 0)
-                        this.GRID[r][c+1] = this.GRID[r][c];
+                        this.GRID[r][c + 1] = this.GRID[r][c];
                 }
             }
         }
     }
-    
+
     // Check if all blocks at a given row is the same
     checkRowIsSame(row) {
-        for (let c = 0; c < this.COLUMNS-1; c++) {
-            if (this.GRID[row][c] != this.GRID[row][c+1] ) {
+        for (let c = 0; c < this.COLUMNS - 1; c++) {
+            if (this.GRID[row][c] != this.GRID[row][c + 1]) {
                 return false;
             }
         }
@@ -197,28 +263,77 @@ class GameManager {
 
     // Translate moving blocks horizontally. Takes one argument direction (LEFT, RIGHT)
     translateMovingBlocksHorizontally(dir) {
+        //check if the move is legal
         for (let r = 0; r < this.ROWS; r++) {
             for (let c = 0; c < this.COLUMNS; c++) {
                 if (this.GRID[r][c] > 0) {
                     if (dir == "LEFT") {
-                        if (c-1 >= 0 && this.GRID[r][c-1] == 0) {
-                            this.GRID[r][c-1] = this.GRID[r][c];
-                            this.GRID[r][c] = 0;
+                        if (!this.canMoveHorizontally(r, c, dir)) {
                             return;
                         }
                     }
                     else if (dir == "RIGHT") {
-                        if (c+1 < this.COLUMNS && this.GRID[r][c+1] == 0) {
-                            this.GRID[r][c+1] = this.GRID[r][c];
-                            this.GRID[r][c] = 0;
+                        if (!this.canMoveHorizontally(r, c, dir)) {
+
                             return;
                         }
                     }
-                    else {
-                        return;
+                }
+            }
+        }
+        //execute the move
+        //we have to do this seperately for each direction, or else it moves all the way to the side
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (this.GRID[r][c] > 0) {
+                    if (dir == "LEFT") {
+                        if (this.canMoveHorizontally(r, c, dir)) {
+                            this.GRID[r][c - 1] = this.GRID[r][c];
+                            this.GRID[r][c] = 0;
+                            // return;
+                        }
                     }
                 }
             }
+        }
+        for (let c = this.COLUMNS - 1; c >= 0; c--) {
+            for (let r = 0; r < this.ROWS; r++) {
+                if (this.GRID[r][c] > 0) {
+                    if (dir == "RIGHT") {
+                        if (this.canMoveHorizontally(r, c, dir)) {
+                            this.GRID[r][c + 1] = this.GRID[r][c];
+                            this.GRID[r][c] = 0;
+                            // return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //can this block move horizontally
+    canMoveHorizontally(r, c, dir) {
+        if (dir == "LEFT") {
+            //if we can move one to the left
+            if (c - 1 >= 0) {
+                //if there is no block, we can move
+                if (this.GRID[r][c - 1] == 0)
+                    return true;
+                //or if the block next to us is positive and can move
+                return this.canMoveHorizontally(r, c - 1, dir);
+            }
+            return false;
+        }
+        if (dir == "RIGHT") {
+            //if we can move one to the left
+            if (c + 1 < this.COLUMNS) {
+                //if there is no block, we can move
+                if (this.GRID[r][c + 1] == 0)
+                    return true;
+                //or if the block next to us is positive and can move
+                return this.canMoveHorizontally(r, c + 1, dir);
+            }
+            return false;
         }
     }
 
