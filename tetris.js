@@ -51,7 +51,7 @@ export class Tetris extends Scene {
         // *** Game Logic ***
         this.time = this.time + dt;
         // 1 tick = 1 seconds
-        let tickRate = 0.1;
+        let tickRate = 0.25;
         if (this.time > tickRate) {
             this.time = 0;
 
@@ -263,6 +263,16 @@ class GameManager {
 
     // Translate moving blocks horizontally. Takes one argument direction (LEFT, RIGHT)
     translateMovingBlocksHorizontally(dir) {
+
+        //deep copy the grid
+        let COPYGRID = deepCopy(this.GRID);
+        for (let r = 0; r < this.ROWS; r++) {
+            for (let c = 0; c < this.COLUMNS; c++) {
+                if (COPYGRID[r][c] > 0)
+                    COPYGRID[r][c] = 0;
+            }
+        }
+
         //check if the move is legal
         for (let r = 0; r < this.ROWS; r++) {
             for (let c = 0; c < this.COLUMNS; c++) {
@@ -274,41 +284,33 @@ class GameManager {
                     }
                     else if (dir == "RIGHT") {
                         if (!this.canMoveHorizontally(r, c, dir)) {
-
                             return;
                         }
                     }
                 }
             }
         }
-        //execute the move
-        //we have to do this seperately for each direction, or else it moves all the way to the side
+
+        //actually move the items
         for (let r = 0; r < this.ROWS; r++) {
             for (let c = 0; c < this.COLUMNS; c++) {
                 if (this.GRID[r][c] > 0) {
                     if (dir == "LEFT") {
                         if (this.canMoveHorizontally(r, c, dir)) {
-                            this.GRID[r][c - 1] = this.GRID[r][c];
-                            this.GRID[r][c] = 0;
-                            // return;
+                            COPYGRID[r][c - 1] = this.GRID[r][c];
                         }
                     }
-                }
-            }
-        }
-        for (let c = this.COLUMNS - 1; c >= 0; c--) {
-            for (let r = 0; r < this.ROWS; r++) {
-                if (this.GRID[r][c] > 0) {
-                    if (dir == "RIGHT") {
+                    else if (dir == "RIGHT") {
                         if (this.canMoveHorizontally(r, c, dir)) {
-                            this.GRID[r][c + 1] = this.GRID[r][c];
-                            this.GRID[r][c] = 0;
-                            // return;
+                            COPYGRID[r][c + 1] = this.GRID[r][c];
                         }
                     }
                 }
             }
         }
+        this.GRID = COPYGRID;
+
+
     }
 
     //can this block move horizontally
@@ -420,4 +422,39 @@ class GridRenderer {
         }
     }
 
+}
+
+
+
+const deepCopy = (arr) => {
+    let copy = [];
+    arr.forEach(elem => {
+        if (Array.isArray(elem)) {
+            copy.push(deepCopy(elem))
+        } else {
+            if (typeof elem === 'object') {
+                copy.push(deepCopyObject(elem))
+            } else {
+                copy.push(elem)
+            }
+        }
+    })
+    return copy;
+}
+
+// Helper function to deal with Objects
+const deepCopyObject = (obj) => {
+    let tempObj = {};
+    for (let [key, value] of Object.entries(obj)) {
+        if (Array.isArray(value)) {
+            tempObj[key] = deepCopy(value);
+        } else {
+            if (typeof value === 'object') {
+                tempObj[key] = deepCopyObject(value);
+            } else {
+                tempObj[key] = value
+            }
+        }
+    }
+    return tempObj;
 }
