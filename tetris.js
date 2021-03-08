@@ -16,11 +16,14 @@ export class Tetris extends Scene {
         this.gR = new GridRenderer(this.game_manager.getNumRows(), this.game_manager.getNumColumns(), 3);
         console.log(this.gR);
         this.time = 0;
+        this.tickRate = 1.0;
 
     }
     make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
         this.key_triggered_button("Move right", ["k"], () => { this.game_manager.translateMovingBlocksHorizontally("RIGHT") });
         this.key_triggered_button("Move left", ["j"], () => { this.game_manager.translateMovingBlocksHorizontally("LEFT") });
+        this.key_triggered_button("Speed up", ["u"], () => { this.tickRate = this.game_manager.changeSpeed("UP", this.tickRate)});
+        this.key_triggered_button("Slow down", ["n"], () => {this.tickRate = this.game_manager.changeSpeed("DOWN", this.tickRate)})
         this.key_triggered_button("Rotate", ["i"], () => { this.game_manager.rotate() });
     }
     display(context, program_state) {                                                // display():  Called once per frame of animation
@@ -50,9 +53,8 @@ export class Tetris extends Scene {
 
         // *** Game Logic ***
         this.time = this.time + dt;
-        // 1 tick = 1 seconds
-        let tickRate = 0.25;
-        if (this.time > tickRate) {
+       
+        if (this.time > this.tickRate) {
             this.time = 0;
 
             if (this.game_manager.isFallingBlocks()) {
@@ -347,6 +349,21 @@ class GameManager {
                 return this.canMoveHorizontally(r, c + 1, dir);
             }
             return false;
+        }
+    }
+
+    changeSpeed(dir, rate) {
+        if (dir == "UP") {
+            if (rate == 0.2)
+                return 0.2;
+            else
+                return rate-0.2;
+        }
+        else {
+            if (rate == 1.0)
+                return 1.0;
+            else
+                return rate+0.2;
         }
     }
 
