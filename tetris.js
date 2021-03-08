@@ -151,7 +151,7 @@ class GameManager {
     generateShape() {
         let NUM_SHAPES = 4;
         //let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
-        let shape = 2;
+        let shape = 4;
         let middle = Math.floor(this.COLUMNS / 2);
         switch (shape) {
             //2x2 block
@@ -402,6 +402,20 @@ class GameManager {
                     rotationPoint.c += 1.5;
                     break;
                 }
+            // s-shape
+            case 4:
+                // VERTICAL:
+                if (this.pointInGrid(rotationPoint.r, rotationPoint.c+1) && this.GRID[rotationPoint.r][rotationPoint.c+1] != 4) {
+                    rotationPoint.r -= 0.5;
+                    rotationPoint.c -= 0.5;
+                    break;
+                }
+                else {
+                    //rotationPoint.r += 1;
+                    //rotationPoint.c += 1;
+                    break;
+                }
+
 
         }
         console.log("Rotation Point: (" + rotationPoint.r + "," + rotationPoint.c + ")");
