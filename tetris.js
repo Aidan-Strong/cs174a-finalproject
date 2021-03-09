@@ -150,8 +150,8 @@ class GameManager {
     //will probably refactor this to do something different
     generateShape() {
         let NUM_SHAPES = 5;
-        // let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
-        let shape = 2;
+        let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
+        // let shape = 2;
         let middle = Math.floor(this.COLUMNS / 2);
         switch (shape) {
             //2x2 block
@@ -578,6 +578,9 @@ class GridRenderer {
 
                     //get the correct color
                     let boxColor = this.getColor(grid[r][c]);
+
+                    //rotate animation?
+                    // cube_transform = cube_transform.times(Mat4.rotation(program_state.animation_time / 1000, 1, 1, 1));
 
                     //draw
                     this.shapes.box.draw(context, program_state, cube_transform, this.materials.plastic.override(boxColor));
