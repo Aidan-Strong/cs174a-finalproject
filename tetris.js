@@ -22,8 +22,8 @@ export class Tetris extends Scene {
     make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
         this.key_triggered_button("Move right", ["k"], () => { this.game_manager.translateMovingBlocksHorizontally("RIGHT") });
         this.key_triggered_button("Move left", ["j"], () => { this.game_manager.translateMovingBlocksHorizontally("LEFT") });
-        this.key_triggered_button("Speed up", ["u"], () => { this.tickRate = this.game_manager.changeSpeed("UP", this.tickRate)});
-        this.key_triggered_button("Slow down", ["n"], () => {this.tickRate = this.game_manager.changeSpeed("DOWN", this.tickRate)})
+        this.key_triggered_button("Speed up", ["u"], () => { this.tickRate = this.game_manager.changeSpeed("UP", this.tickRate) });
+        this.key_triggered_button("Slow down", ["n"], () => { this.tickRate = this.game_manager.changeSpeed("DOWN", this.tickRate) })
         this.key_triggered_button("Rotate", ["i"], () => { this.game_manager.rotate() });
     }
     display(context, program_state) {                                                // display():  Called once per frame of animation
@@ -53,7 +53,7 @@ export class Tetris extends Scene {
 
         // *** Game Logic ***
         this.time = this.time + dt;
-       
+
         if (this.time > this.tickRate) {
             this.time = 0;
 
@@ -149,9 +149,9 @@ class GameManager {
 
     //will probably refactor this to do something different
     generateShape() {
-        let NUM_SHAPES = 4;
-        //let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
-        let shape = 3;
+        let NUM_SHAPES = 5;
+        // let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
+        let shape = 2;
         let middle = Math.floor(this.COLUMNS / 2);
         switch (shape) {
             //2x2 block
@@ -181,6 +181,14 @@ class GameManager {
                 this.GRID[0][middle - 1] = shape;
                 this.GRID[1][middle - 1] = shape;
                 this.GRID[1][middle - 2] = shape;
+                break;
+            //t-block
+            case 5:
+                this.GRID[0][middle - 1] = shape;
+                this.GRID[1][middle] = shape;
+                this.GRID[1][middle - 1] = shape;
+                this.GRID[1][middle - 2] = shape;
+                break;
 
         }
     }
@@ -352,13 +360,13 @@ class GameManager {
             if (rate == 0.2)
                 return 0.2;
             else
-                return rate-0.2;
+                return rate - 0.2;
         }
         else {
             if (rate == 1.0)
                 return 1.0;
             else
-                return rate+0.2;
+                return rate + 0.2;
         }
     }
 
@@ -402,27 +410,57 @@ class GameManager {
                     rotationPoint.c += 1.5;
                     break;
                 }
-            
+
             // l-shape
             case 3:
-                
+
                 // Horizontal
+                // 0 0 0
                 // 0 0 3
                 // 3 3 3
-                if (this.pointInGrid(rotationPoint.r + 1, rotationPoint.c) && this.GRID[rotationPoint.r+1][rotationPoint.c] == 3) {
-                        this.rotationPoint.r -= 2.5;
-                        this.rotationPoint.c += 2;
-                        console.log("l-shape rotation")
-                        break;
-                    }
-               
+                console.log("L Shape");
+                if (this.pointInGrid(rotationPoint.r - 1, rotationPoint.c + 1) && this.GRID[rotationPoint.r - 1][rotationPoint.c + 1] == 0) {
+                    rotationPoint.r -= 1;
+                    rotationPoint.c += 1;
+                    break;
+                }
+                //
+                //000
+                //111
+                //100
+                //000
+                else if (this.pointInGrid(rotationPoint.r, rotationPoint.c + 1) && this.GRID[rotationPoint.r][rotationPoint.c + 1] == 0) {
+                    rotationPoint.r += 0;
+                    rotationPoint.c += 1;
+                }
+                else {
+                    rotationPoint.valid = false;
+                }
+
+
+
 
             // s-shape
             case 4:
                 // VERTICAL:
-                if (this.pointInGrid(rotationPoint.r, rotationPoint.c+1) && this.GRID[rotationPoint.r][rotationPoint.c+1] != 4) {
+                if (this.pointInGrid(rotationPoint.r, rotationPoint.c + 1) && this.GRID[rotationPoint.r][rotationPoint.c + 1] != 4) {
                     rotationPoint.r -= 0.5;
                     rotationPoint.c -= 0.5;
+                    break;
+                }
+                else {
+                    //rotationPoint.r += 1;
+                    //rotationPoint.c += 1;
+                    break;
+                }
+
+            //t-block
+            case 5:
+                //000
+                //010
+                //111
+                if (this.pointInGrid(rotationPoint.r - 1, rotationPoint.c + 1) && this.GRID[rotationPoint.r - 1][rotationPoint.c] != 4) {
+                    //rotation point will be the first block we find
                     break;
                 }
                 else {
@@ -441,9 +479,13 @@ class GameManager {
 
 
     rotate() {
+
         //find rotation point
         let rotationPoint = this.findRotation();
         console.log("Rotation Point: (" + rotationPoint.r + "," + rotationPoint.c + ")");
+
+        if (!rotationPoint.valid)
+            return;
 
         //deep copy it
         let COPYGRID = deepCopy(this.GRID);
@@ -470,11 +512,13 @@ class GameManager {
                     rotatedR += rotationPoint.r;
                     rotatedR = Math.round(rotatedR);
 
-                    COPYGRID[rotatedR][rotatedC] = this.GRID[r][c];
-                    console.log(rotatedR + "," + rotatedC)
+                    //make sure it is valid to set this new position
                     if (!this.pointInGrid(rotatedR, rotatedC) || COPYGRID[rotatedR][rotatedC] < 0) {
                         return;
                     }
+
+                    COPYGRID[rotatedR][rotatedC] = this.GRID[r][c];
+
                 }
             }
         }
@@ -615,6 +659,7 @@ class Point {
         this.r = rr;
         this.c = cc;
         this.type = t;
+        this.valid = true;
     }
 }
 
