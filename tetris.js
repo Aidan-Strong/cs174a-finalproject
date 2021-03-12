@@ -391,10 +391,11 @@ class GameManager {
         //figure out which shape we are dealing with
         switch (rotationPoint.type) {
             // //2x2
-            // case 1:
-            //     rotationPoint.c = 0;
-            //     rotationPoint.r = 0;
-
+            case 1:
+                rotationPoint.c = 0;
+                rotationPoint.r = 0;
+                rotationPoint.valid = false;
+                break;
 
             //1x4 block
             case 2:
@@ -580,7 +581,7 @@ class GridRenderer {
                     let boxColor = this.getColor(grid[r][c]);
 
                     //rotate animation?
-                    // cube_transform = cube_transform.times(Mat4.rotation(program_state.animation_time / 1000, 1, 1, 1));
+                    cube_transform = cube_transform.times(Mat4.rotation(program_state.animation_time / 1000, 1, 1, 1));
 
                     //draw
                     this.shapes.box.draw(context, program_state, cube_transform, this.materials.plastic.override(boxColor));
