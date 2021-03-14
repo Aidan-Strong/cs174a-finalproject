@@ -10,21 +10,55 @@ export class Tetris extends Scene {
         super();
 
 
-        //initialization
+        // initialization for Tetris
         this.game_manager = new GameManager();
         console.log(this.game_manager);
-        this.gR = new GridRenderer(this.game_manager.getNumRows(), this.game_manager.getNumColumns(), 3);
-        console.log(this.gR);
-        this.time = 0;
+        this.tetrisGrid = new GridRenderer(this.game_manager.getNumRows(), this.game_manager.getNumColumns(), 3);
+        console.log(this.tetrisGrid);
+
+        // initialization for Snake
+        this.snake_game_manager = new Snake();
+        console.log(this.snake_game_manager);
+        // *** TODO: need to create a class that will render the snake grid ***
+        // this.snakeGrid = new SnakeRenderer();
+        // console.log(this.snakeGrid);
+
+        // use separate time variables for each game
+        this.tetris_time = 0;
+        this.snake_time = 0;
+
+        // tick rate remains the same across games
         this.tickRate = 1.0;
+
+        // variables for pausing the games
+        this.pause_snake = true;
+        this.pause_tetris = false;
+
+        // variables to keep track which game is currently being played (i.e. where the camera should be)
+        this.playing_tetris = true;
+        this.playing_snake = false;
 
     }
     make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
-        this.key_triggered_button("Move right", ["k"], () => { this.game_manager.translateMovingBlocksHorizontally("RIGHT") });
-        this.key_triggered_button("Move left", ["j"], () => { this.game_manager.translateMovingBlocksHorizontally("LEFT") });
+        // *** TODO *** 
+        // Define functions to allow for snake movement controls to work
+        // Move up
+        // Move down
+        // Switch camera to snake
+
+        // Shared controls
+        this.key_triggered_button("Move right", ["k"], () => { if (this.playing_tetris) {this.game_manager.translateMovingBlocksHorizontally("RIGHT")}});
+        this.key_triggered_button("Move left", ["j"], () => { if (this.playing_tetris) {this.game_manager.translateMovingBlocksHorizontally("LEFT")}});
         this.key_triggered_button("Speed up", ["u"], () => { this.tickRate = this.game_manager.changeSpeed("UP", this.tickRate) });
         this.key_triggered_button("Slow down", ["n"], () => { this.tickRate = this.game_manager.changeSpeed("DOWN", this.tickRate) })
-        this.key_triggered_button("Rotate", ["i"], () => { this.game_manager.rotate() });
+        this.key_triggered_button("Pause game", ["p"],() => {if (this.playing_snake) {this.pause_snake = !this.pause_snake;} else {this.pause_tetris = !this.pause_tetris;}});
+
+        // Controls for snake
+        this.key_triggered_button("Move up", ["i"], ()=> {if (this.playing_snake) {/* need to insert movement control for snake */}});
+        this.key_triggered_button("Move down", ["d"],()=> {if (this.playing_snake) {/* need to insert movement control for snake */}});
+      
+        // Controls for tetris
+        this.key_triggered_button("Rotate", ["i"], () => { if (this.playing_tetris) { this.game_manager.rotate() } });
     }
     display(context, program_state) {                                                // display():  Called once per frame of animation
 
@@ -52,36 +86,54 @@ export class Tetris extends Scene {
 
 
         // *** Game Logic ***
-        this.time = this.time + dt;
 
-        if (this.time > this.tickRate) {
-            this.time = 0;
+        // ---- TETRIS ----
+        if (this.pause_tetris == false && this.playing_tetris == true) { 
+            this.tetris_time = this.tetris_time + dt;
 
-            if (this.game_manager.isFallingBlocks()) {
-                this.game_manager.translateMovingBlocksDown();
-                if (this.game_manager.getCollision()) {
-                    this.game_manager.changeBlocksToStatic();
-                    for (let i = 0; i < 4; i++) {
-                        if (this.game_manager.checkRowIsSame(this.game_manager.getNumRows() - 1)) {
-                            this.game_manager.clearBottomRow();
+            if (this.tetris_time > this.tickRate) {
+                this.tetris_time = 0;
+
+                if (this.game_manager.isFallingBlocks()) {
+                    this.game_manager.translateMovingBlocksDown();
+                    if (this.game_manager.getCollision()) {
+                        this.game_manager.changeBlocksToStatic();
+                        for (let i = 0; i < this.game_manager.getNumRows(); i++) {
+                            if (this.game_manager.checkRowIsSame(i)) {
+                                for (let j = 0; j < 4; j++) {
+                                    if (this.game_manager.checkRowIsSame(i)) {
+                                        this.game_manager.clearRow(i);
+                                    }
+                                    else {
+                                        break;
+                                    }
+                                }
+                               
+                            }
                         }
+                        this.game_manager.setCollision(false);
                     }
-                    this.game_manager.setCollision(false);
+                }
+                else {
+                    // Spawn block
+                    this.game_manager.generateShape();
                 }
             }
-            else {
-                // Spawn block
-                this.game_manager.generateShape();
-            }
         }
-        this.gR.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
+
+        this.tetrisGrid.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
+
+        // ---- SNAKE -----
+        if (this.pause_snake == false && this.playing_snake == true) {
+            // *** Insert game logic here *** //
+        }
     }
 }
 
 // Class that handles game logic and contains game grid
 class GameManager {
     constructor() {
-        // 20 x 7 grid layout
+        // 20 x 10 grid layout
         this.GRID = [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -150,8 +202,8 @@ class GameManager {
     //will probably refactor this to do something different
     generateShape() {
         let NUM_SHAPES = 5;
-        let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
-        // let shape = 2;
+        //let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
+        let shape = 2;
         let middle = Math.floor(this.COLUMNS / 2);
         switch (shape) {
             //2x2 block
@@ -261,18 +313,13 @@ class GameManager {
 
     // Clear bottom row and shift down all static rows down
     // Only if all blocks at the bottom are the same color
-    clearBottomRow() {
-        if (this.checkRowIsSame(this.ROWS - 1)) {
-            for (let r = this.ROWS - 2; r >= 0; r--) {
-                for (let c = 0; c < this.COLUMNS; c++) {
-                    if (this.GRID[r][c] <= 0)
-                        this.GRID[r + 1][c] = this.GRID[r][c];
-                }
-            }
-            for (let c = 0; c < this.COLUMNS; c++) {
-                this.GRID[0][c] = 0
-            }
+    clearRow(row) {
+        this.GRID.splice(row, 1);
+        let temp_row = [];
+        for (let c = 0; c < this.COLUMNS; c++) {
+            temp_row.push(0);
         }
+       this.GRID.unshift(temp_row);
     }
 
 
@@ -534,6 +581,98 @@ class GameManager {
         return rInGrid && cInGrid;
     }
 }
+
+/* Implement Game Logic for Snake */
+class Snake {
+    constructor() {
+        // 20 x 20 grid layout
+        // 1 represents wall, 0 represents empty space, 2 represents snake, 3 represents fruit
+        this.GRID = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+          
+        ]
+        // Number of Rows
+        this.ROWS = 20;
+        // Number of Columns
+        this.COLUMNS = 20;
+
+        // Direction where the player is facing 
+        this.DIRECTION = "RIGHT";
+
+        // Starting row for the player
+        this.STARTING_ROW = 8;
+
+        // Starting column for the player
+        this.STARTING_COLUMN = 12;
+
+        // Coordinates of where the snakes are located
+        // first entry is the head and the last entry is the tail
+        this.BODY = [[this.STARTING_ROW, this.STARTING_COLUMN]];
+    }
+    
+    // Returns true if the row, column is a wall or is part of the snake
+    checkCollision(row, column) {
+        if (row < 0 || column >= this.COLUMNS || this.GRID[row][column] == 1 || this.BODY.includes([row,column]))
+            return true;
+        return false;
+    }
+    
+    // Called by moveSnake. If the snake will move to a square containing a fruit
+    // then it will add the old tail that was popped
+    growSnake(row, column, tail) {
+        if (this.GRID[row][column] == 3) {
+            this.GRID[tail[0]][tail[1]] = 2;
+            this.BODY.push(tail);
+        }
+    }
+
+
+    // Moves the snake to a given row and column, updates grid
+    moveSnake(row, column) {
+        let head = [row, column];
+        this.BODY.pop();
+        let old_tail_row = this.BODY[this.BODY.length()-1][0];
+        let old_tail_column = this.BODY[this.BODY.length()-1][1];
+        this.GRID[old_tail_row][old_tail_column] = 0;
+        this.BODY.unshift(head);
+        this.growSnake(row, column, [old_tail_row, old_tail_column]); // Call in case the snake moves on to a fruit
+        this.GRID[row][column] = 2;
+    }
+
+    // Creates a fruit in a square that is not occupied
+    generateFruit() {
+        let flag = true;
+        while (flag) {
+            let temp_row = Math.floor(Math.random() * (this.ROWS-2) + 1);
+            let temp_col = Math.floor(Math.random() * (this.COLUMNS-2)+ 1);
+            if (this.BODY.includes([temp_row, temp_col] == false) ) {
+                this.GRID[temp_row][temp_col] = 3;
+                flag = false;
+            }
+        }
+    }
+
+}
+
 
 class GridRenderer {
 
