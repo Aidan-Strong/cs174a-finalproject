@@ -1,5 +1,6 @@
 import { tiny, defs } from './examples/common.js';
-
+import { GridRenderer } from './gridrenderer.js';
+import { Snake } from './snake.js';
 // Pull these names into this module's scope for convenience:
 //keeping imports for use in the future
 const { vec3, vec4, color, Mat4, Light, Shape, Material, Shader, Texture, Scene } = tiny;
@@ -19,9 +20,6 @@ export class Tetris extends Scene {
         // initialization for Snake
         this.snake_game_manager = new Snake();
         console.log(this.snake_game_manager);
-        // *** TODO: need to create a class that will render the snake grid ***
-        // this.snakeGrid = new SnakeRenderer();
-        // console.log(this.snakeGrid);
 
         // use separate time variables for each game
         this.tetris_time = 0;
@@ -40,26 +38,41 @@ export class Tetris extends Scene {
 
     }
     make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
-        // *** TODO *** 
-        // Define functions to allow for snake movement controls to work
-        // Move up
-        // Move down
-        // Switch camera to snake
 
-        // Shared controls
-        this.key_triggered_button("Move right", ["k"], () => { if (this.playing_tetris) {this.game_manager.translateMovingBlocksHorizontally("RIGHT")}});
-        this.key_triggered_button("Move left", ["j"], () => { if (this.playing_tetris) {this.game_manager.translateMovingBlocksHorizontally("LEFT")}});
+
+
+
+        //Global Controls
         this.key_triggered_button("Speed up", ["u"], () => { this.tickRate = this.game_manager.changeSpeed("UP", this.tickRate) });
         this.key_triggered_button("Slow down", ["n"], () => { this.tickRate = this.game_manager.changeSpeed("DOWN", this.tickRate) })
-        this.key_triggered_button("Pause game", ["p"],() => {if (this.playing_snake) {this.pause_snake = !this.pause_snake;} else {this.pause_tetris = !this.pause_tetris;}});
+        this.key_triggered_button("Pause game", ["p"], () => { if (this.playing_snake) { this.pause_snake = !this.pause_snake; } else { this.pause_tetris = !this.pause_tetris; } });
+        this.key_triggered_button("Switch Game", ["x"], () => {
+            if (this.playing_snake) {
+                this.playing_tetris = true;
+                this.playing_snake = false;
+                this.pause_tetris = false;
+                this.pause_snake = true;
+            }
+            else
+                if (this.playing_tetris) {
+                    this.playing_snake = true;
+                    this.playing_tetris = false;
+                    this.pause_tetris = true;
+                    this.pause_snake = false;
+                }
 
-        // Controls for snake
-        this.key_triggered_button("Move up", ["i"], ()=> {if (this.playing_snake) {/* need to insert movement control for snake */}});
-        this.key_triggered_button("Move down", ["d"],()=> {if (this.playing_snake) {/* need to insert movement control for snake */}});
-      
-        // Controls for tetris
-        this.key_triggered_button("Rotate", ["i"], () => { if (this.playing_tetris) { this.game_manager.rotate() } });
+        })
+        // Game Specific controls
+        this.key_triggered_button("Move right", ["l"], () => { if (this.playing_tetris) { this.game_manager.translateMovingBlocksHorizontally("RIGHT") } else if (this.playing_snake) { this.snake_game_manager.input(3) } });
+        this.key_triggered_button("Move left", ["j"], () => { if (this.playing_tetris) { this.game_manager.translateMovingBlocksHorizontally("LEFT") } else if (this.playing_snake) { this.snake_game_manager.input(1) } });
+        this.key_triggered_button("Rotate", ["t"], () => { if (this.playing_tetris) { this.game_manager.rotate() } });
+
+        this.key_triggered_button("Move up", ["i"], () => { if (this.playing_snake) this.snake_game_manager.input(0) });
+        this.key_triggered_button("Move down", ["k"], () => { if (this.playing_snake) this.snake_game_manager.input(2) });
     }
+
+
+
     display(context, program_state) {                                                // display():  Called once per frame of animation
 
 
@@ -88,7 +101,7 @@ export class Tetris extends Scene {
         // *** Game Logic ***
 
         // ---- TETRIS ----
-        if (this.pause_tetris == false && this.playing_tetris == true) { 
+        if (this.pause_tetris == false && this.playing_tetris == true) {
             this.tetris_time = this.tetris_time + dt;
 
             if (this.tetris_time > this.tickRate) {
@@ -108,7 +121,7 @@ export class Tetris extends Scene {
                                         break;
                                     }
                                 }
-                               
+
                             }
                         }
                         this.game_manager.setCollision(false);
@@ -119,13 +132,15 @@ export class Tetris extends Scene {
                     this.game_manager.generateShape();
                 }
             }
+            this.tetrisGrid.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
         }
 
-        this.tetrisGrid.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
+
 
         // ---- SNAKE -----
         if (this.pause_snake == false && this.playing_snake == true) {
-            // *** Insert game logic here *** //
+            this.snake_game_manager.processTick(dt);
+            this.snake_game_manager.displayGrid(context, program_state, Mat4.identity);
         }
     }
 }
@@ -319,7 +334,7 @@ class GameManager {
         for (let c = 0; c < this.COLUMNS; c++) {
             temp_row.push(0);
         }
-       this.GRID.unshift(temp_row);
+        this.GRID.unshift(temp_row);
     }
 
 
@@ -582,183 +597,8 @@ class GameManager {
     }
 }
 
-/* Implement Game Logic for Snake */
-class Snake {
-    constructor() {
-        // 20 x 20 grid layout
-        // 1 represents wall, 0 represents empty space, 2 represents snake, 3 represents fruit
-        this.GRID = [
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-          
-        ]
-        // Number of Rows
-        this.ROWS = 20;
-        // Number of Columns
-        this.COLUMNS = 20;
-
-        // Direction where the player is facing 
-        this.DIRECTION = "RIGHT";
-
-        // Starting row for the player
-        this.STARTING_ROW = 8;
-
-        // Starting column for the player
-        this.STARTING_COLUMN = 12;
-
-        // Coordinates of where the snakes are located
-        // first entry is the head and the last entry is the tail
-        this.BODY = [[this.STARTING_ROW, this.STARTING_COLUMN]];
-    }
-    
-    // Returns true if the row, column is a wall or is part of the snake
-    checkCollision(row, column) {
-        if (row < 0 || column >= this.COLUMNS || this.GRID[row][column] == 1 || this.BODY.includes([row,column]))
-            return true;
-        return false;
-    }
-    
-    // Called by moveSnake. If the snake will move to a square containing a fruit
-    // then it will add the old tail that was popped
-    growSnake(row, column, tail) {
-        if (this.GRID[row][column] == 3) {
-            this.GRID[tail[0]][tail[1]] = 2;
-            this.BODY.push(tail);
-        }
-    }
 
 
-    // Moves the snake to a given row and column, updates grid
-    moveSnake(row, column) {
-        let head = [row, column];
-        this.BODY.pop();
-        let old_tail_row = this.BODY[this.BODY.length()-1][0];
-        let old_tail_column = this.BODY[this.BODY.length()-1][1];
-        this.GRID[old_tail_row][old_tail_column] = 0;
-        this.BODY.unshift(head);
-        this.growSnake(row, column, [old_tail_row, old_tail_column]); // Call in case the snake moves on to a fruit
-        this.GRID[row][column] = 2;
-    }
-
-    // Creates a fruit in a square that is not occupied
-    generateFruit() {
-        let flag = true;
-        while (flag) {
-            let temp_row = Math.floor(Math.random() * (this.ROWS-2) + 1);
-            let temp_col = Math.floor(Math.random() * (this.COLUMNS-2)+ 1);
-            if (this.BODY.includes([temp_row, temp_col] == false) ) {
-                this.GRID[temp_row][temp_col] = 3;
-                flag = false;
-            }
-        }
-    }
-
-}
-
-
-class GridRenderer {
-
-
-    constructor(r, c, scale) {
-        this.NUM_ROWS = r;
-        this.NUM_COLS = c;
-        this.cubeSize = scale;
-
-
-        //now define the actual shapes / materials we are rendering
-        this.shapes = {
-            'box': new Cube(),
-        };
-
-        // *** Materials: *** 
-        const phong = new defs.Phong_Shader();
-        this.materials = {
-            plastic: new Material(phong,
-                { ambient: .2, diffusivity: 1, specularity: .5, color: color(.9, .5, .9, 1) }),
-        };
-    }
-
-
-    displayGrid(context, program_state, identity, grid) {
-
-        let cube_transform;
-        let cubeGap = 2.5;
-
-        for (let r = 0; r < this.NUM_ROWS; r++) {
-            for (let c = 0; c < this.NUM_COLS; c++) {
-                //render a cube in the correct positions
-
-                //if we have a non-empty spot
-                if (grid[r][c] != 0) {
-
-                    cube_transform = Mat4.identity();
-                    //find the correct position
-                    cube_transform = cube_transform.times(Mat4.translation(this.cubeSize * c, this.cubeSize * -r, 0));
-                    //the higher the cubeGap, the larger the gap, with 1 being no gap
-
-                    cube_transform = cube_transform.times(Mat4.scale(this.cubeSize / cubeGap, this.cubeSize / cubeGap, this.cubeSize / cubeGap));
-
-                    //get the correct color
-                    let boxColor = this.getColor(grid[r][c]);
-
-                    //rotate animation?
-                    cube_transform = cube_transform.times(Mat4.rotation(program_state.animation_time / 1000, 1, 1, 1));
-
-                    //draw
-                    this.shapes.box.draw(context, program_state, cube_transform, this.materials.plastic.override(boxColor));
-                }
-
-            }
-        }
-
-        // //draw the bottom row
-        cube_transform = Mat4.identity();
-        cube_transform = cube_transform.times(Mat4.translation(this.NUM_COLS * this.cubeSize / cubeGap, -1 * this.NUM_ROWS * this.cubeSize, 0));
-        cube_transform = cube_transform.times(Mat4.scale((this.NUM_COLS + 4) * this.cubeSize / cubeGap, 1, 1));
-        this.shapes.box.draw(context, program_state, cube_transform, this.materials.plastic.override(color(1, 1, 1, 1)));
-
-    }
-
-    getColor(index) {
-        switch (Math.abs(index)) {
-            case 1:
-                return color(1, 0, 0, 1);
-            case 2:
-                return color(0, 1, 0, 1);
-            case 3:
-                return color(0, 0, 1, 1);
-            case 4:
-                return color(0, 1, 1, 1);
-            case 5:
-                return color(1, 1, 0, 1);
-            case 6:
-                return color(1, 0, 1, 1);
-            case 7:
-                return color(0.1, 0.75, 0.5, 1);
-            default:
-                return color(1, 1, 1, 1);
-        }
-    }
-
-}
 
 
 
