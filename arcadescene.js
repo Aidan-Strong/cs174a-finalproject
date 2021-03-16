@@ -2,6 +2,7 @@ import { tiny, defs } from './examples/common.js';
 import { Snake } from './snake.js';
 import { Tetris } from './tetris.js';
 import { Shape_From_File } from './examples/obj-file-demo.js';
+import { Text_Line } from './examples/text-demo.js';
 // Pull these names into this module's scope for convenience:
 //keeping imports for use in the future
 
@@ -13,11 +14,15 @@ export class ArcadeScene extends Scene {
 
 
 
-        this.shapes = { "cabinet": new Shape_From_File("assets/arcade.obj"), "box": new Cube() };
+        this.shapes = {
+            "cabinet": new Shape_From_File("assets/arcade.obj"),
+            "box": new Cube(),
+            "text": new Text_Line(35),
+        };
 
 
         // tick rate remains the same across games
-        this.tickRate = 1.0;
+        this.tickRate = 0.25;
 
 
         // initialization for Tetris
@@ -26,10 +31,18 @@ export class ArcadeScene extends Scene {
         // initialization for Snake
         this.snake_game_manager = new Snake(this.tickRate, 0.6);
 
-        this.stars = new Material(new defs.Textured_Phong(1), {
-            color: color(.5, .5, .5, 1),
+
+        this.cabinet_texture = new Material(new defs.Textured_Phong(1), {
+            color: color(0.8, 0.8, 0.8, 1),
             ambient: 0.6, diffusivity: 0, specularity: 0.1, texture: new Texture("assets/dd.png")
         });
+
+        // To show text you need a Material like this one:
+        this.text_image = new Material(new defs.Textured_Phong(1), {
+            ambient: 1, diffusivity: 1, specularity: 1,
+            texture: new Texture("assets/text.png")
+        });
+
 
         this.screen = new Material(new defs.Phong_Shader(), { color: color(0.8, 0.8, 0.8, 1), ambient: 1, diffusivity: 1, });
         // variables for pausing the games
@@ -140,11 +153,19 @@ export class ArcadeScene extends Scene {
         this.snake_game_manager.displayGrid(context, program_state, boardLocation);
 
 
+        //draw the game name
+        let headerTransform = Mat4.identity();
+        headerTransform = headerTransform.times(Mat4.translation(-0.5, 5, 0));
+        headerTransform = headerTransform.times(Mat4.scale(1, 1, 1));
+        this.shapes.text.set_string("TETRIS", context.context);
+        this.shapes.text.draw(context, program_state, headerTransform, this.text_image);
+
+
         //draw the arcade machine
         let arcadeTransform = Mat4.identity();
         arcadeTransform = arcadeTransform.times(Mat4.scale(5, 5, 5));
         arcadeTransform = arcadeTransform.times(Mat4.translation(0.33, -3, 0));
-        this.shapes.cabinet.draw(context, program_state, arcadeTransform, this.stars);
+        this.shapes.cabinet.draw(context, program_state, arcadeTransform, this.cabinet_texture);
 
         // //draw the a screen behind our game
         let cube_transform = Mat4.identity();
@@ -163,8 +184,16 @@ export class ArcadeScene extends Scene {
         arcadeTransform = arcadeTransform.times(Mat4.scale(5, 5, 5));
         arcadeTransform = arcadeTransform.times(Mat4.translation(-6, -3, -8));
 
+        //draw the game name
+        headerTransform = Mat4.identity();
+        headerTransform = headerTransform.times(Mat4.rotation(Math.PI / 2, 0, -1, 0));
+        headerTransform = headerTransform.times(Mat4.translation(37.5, 4, -30));
+        headerTransform = headerTransform.times(Mat4.scale(1, 1, 1));
+        this.shapes.text.set_string("SNAKE", context.context);
+        this.shapes.text.draw(context, program_state, headerTransform, this.text_image);
+
         arcadeTransform = arcadeTransform.times(Mat4.rotation(Math.PI / 2, 0, 1, 0));
-        this.shapes.cabinet.draw(context, program_state, arcadeTransform, this.stars);
+        this.shapes.cabinet.draw(context, program_state, arcadeTransform, this.cabinet_texture);
         // //draw the a screen behind our game
         cube_transform = Mat4.identity();
 
