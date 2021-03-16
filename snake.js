@@ -7,7 +7,7 @@ const { Triangle, Square, Tetrahedron, Windmill, Cube, Subdivision_Sphere } = de
 
 /* Implement Game Logic for Snake */
 export class Snake {
-    constructor(tRate) {
+    constructor(tRate, scale) {
         // 20 x 20 grid layout
         // 1 represents wall, 0 represents empty space, 2 represents snake, 3 represents fruit
         this.GRID = [
@@ -57,7 +57,7 @@ export class Snake {
         this.SNAKE_DIRECTION = 2;
 
 
-        this.gridRenderer = new GridRenderer(this.ROWS, this.COLUMNS, 3);
+        this.gridRenderer = new GridRenderer(this.ROWS, this.COLUMNS, scale);
 
 
 

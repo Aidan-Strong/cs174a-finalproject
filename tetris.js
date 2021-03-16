@@ -8,7 +8,7 @@ const { Triangle, Square, Tetrahedron, Windmill, Cube, Subdivision_Sphere } = de
 
 // Class that handles game logic and contains game grid
 export class Tetris {
-    constructor(tRate) {
+    constructor(tRate, scale) {
 
         // 20 x 10 grid layout
         this.GRID = [
@@ -41,7 +41,7 @@ export class Tetris {
         this.COLLISION = false;
 
         //rendering
-        this.gridRenderer = new GridRenderer(this.ROWS + 1, this.COLUMNS, 3);
+        this.gridRenderer = new GridRenderer(this.ROWS + 1, this.COLUMNS, scale);
         this.tickRate = tRate;
         this.time = 0;
         this.paused = false;

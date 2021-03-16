@@ -42,7 +42,8 @@ export class GridRenderer {
 
 
                     //TODO: We aren't actually passing the identity to the renderer, im not sure how to do this correctly..
-                    cube_transform = Mat4.identity();
+
+                    cube_transform = Mat4.identity().map((x, i) => identity[i]);
                     //find the correct position
                     cube_transform = cube_transform.times(Mat4.translation(this.cubeSize * c, this.cubeSize * -r, 0));
                     //the higher the cubeGap, the larger the gap, with 1 being no gap
@@ -60,10 +61,6 @@ export class GridRenderer {
             }
         }
 
-        // //draw the a screen behind our game
-        cube_transform = Mat4.identity();
-        cube_transform = cube_transform.times(Mat4.translation((this.NUM_COLS * this.cubeSize) / 2, -(this.NUM_ROWS * this.cubeSize) / 2, 0));
-        cube_transform = cube_transform.times(Mat4.scale((this.NUM_COLS * 1.75) * (this.cubeSize / cubeGap), (this.NUM_ROWS * 1.75) * this.cubeSize / cubeGap, 1));
 
 
         this.shapes.box.draw(context, program_state, cube_transform, this.materials.plastic.override(color(0.25, 0.25, 0.25, 1)));
