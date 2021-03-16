@@ -7,7 +7,7 @@ const { Triangle, Square, Tetrahedron, Windmill, Cube, Subdivision_Sphere } = de
 
 /* Implement Game Logic for Snake */
 export class Snake {
-    constructor() {
+    constructor(tRate) {
         // 20 x 20 grid layout
         // 1 represents wall, 0 represents empty space, 2 represents snake, 3 represents fruit
         this.GRID = [
@@ -63,7 +63,7 @@ export class Snake {
 
         //tic rate
         this.time = 0;
-        this.tickRate = 0.5;
+        this.tickRate = tRate;
         this.paused = false;
     }
 
@@ -247,6 +247,10 @@ export class Snake {
                 break;
         }
         this.moveSnake(currentRow, currentCol);
+    }
+
+    changeTickRate(t) {
+        this.tickRate = t;
     }
 
 

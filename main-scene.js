@@ -26,8 +26,8 @@ import { Surfaces_Demo }
   from "./examples/surfaces-demo.js"
 import { Text_Demo }
   from "./examples/text-demo.js"
-import { Tetris }
-  from './tetris.js'
+import { ArcadeScene }
+  from './arcadescene.js'
 
 
 Object.assign(defs,
@@ -38,13 +38,13 @@ Object.assign(defs,
   { Scene_To_Texture_Demo },
   { Surfaces_Demo },
   { Text_Demo },
-  { Tetris });
+  { ArcadeScene });
 
 // ******************** End extra step
 
 // (Can define Main_Scene's class here)
 
-const Main_Scene = Tetris;
+const Main_Scene = ArcadeScene;
 const Additional_Scenes = [];
 
 export { Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs }

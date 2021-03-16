@@ -1,153 +1,15 @@
 import { tiny, defs } from './examples/common.js';
 import { GridRenderer } from './gridrenderer.js';
-import { Snake } from './snake.js';
 // Pull these names into this module's scope for convenience:
 //keeping imports for use in the future
 const { vec3, vec4, color, Mat4, Light, Shape, Material, Shader, Texture, Scene } = tiny;
 const { Triangle, Square, Tetrahedron, Windmill, Cube, Subdivision_Sphere } = defs;
 
-export class Tetris extends Scene {
-    constructor() {                  // constructor(): Scenes begin by populating initial values like the Shapes and Materials they'll need.
-        super();
-
-
-        // initialization for Tetris
-        this.game_manager = new GameManager();
-        console.log(this.game_manager);
-        this.tetrisGrid = new GridRenderer(this.game_manager.getNumRows(), this.game_manager.getNumColumns(), 3);
-        console.log(this.tetrisGrid);
-
-        // initialization for Snake
-        this.snake_game_manager = new Snake();
-        console.log(this.snake_game_manager);
-
-        // use separate time variables for each game
-        this.tetris_time = 0;
-        this.snake_time = 0;
-
-        // tick rate remains the same across games
-        this.tickRate = 1.0;
-
-        // variables for pausing the games
-        this.pause_snake = true;
-        this.pause_tetris = false;
-
-        // variables to keep track which game is currently being played (i.e. where the camera should be)
-        this.playing_tetris = true;
-        this.playing_snake = false;
-
-    }
-    make_control_panel() {                                 // make_control_panel(): Sets up a panel of interactive HTML elements
-
-
-
-
-        //Global Controls
-        this.key_triggered_button("Speed up", ["u"], () => { this.tickRate = this.game_manager.changeSpeed("UP", this.tickRate) });
-        this.key_triggered_button("Slow down", ["n"], () => { this.tickRate = this.game_manager.changeSpeed("DOWN", this.tickRate) })
-        this.key_triggered_button("Pause game", ["p"], () => { if (this.playing_snake) { this.pause_snake = !this.pause_snake; } else { this.pause_tetris = !this.pause_tetris; } });
-        this.key_triggered_button("Switch Game", ["x"], () => {
-            if (this.playing_snake) {
-                this.playing_tetris = true;
-                this.playing_snake = false;
-                this.pause_tetris = false;
-                this.pause_snake = true;
-            }
-            else
-                if (this.playing_tetris) {
-                    this.playing_snake = true;
-                    this.playing_tetris = false;
-                    this.pause_tetris = true;
-                    this.pause_snake = false;
-                }
-
-        })
-        // Game Specific controls
-        this.key_triggered_button("Move right", ["l"], () => { if (this.playing_tetris) { this.game_manager.translateMovingBlocksHorizontally("RIGHT") } else if (this.playing_snake) { this.snake_game_manager.input(3) } });
-        this.key_triggered_button("Move left", ["j"], () => { if (this.playing_tetris) { this.game_manager.translateMovingBlocksHorizontally("LEFT") } else if (this.playing_snake) { this.snake_game_manager.input(1) } });
-        this.key_triggered_button("Rotate", ["t"], () => { if (this.playing_tetris) { this.game_manager.rotate() } });
-
-        this.key_triggered_button("Move up", ["i"], () => { if (this.playing_snake) this.snake_game_manager.input(0) });
-        this.key_triggered_button("Move down", ["k"], () => { if (this.playing_snake) this.snake_game_manager.input(2) });
-    }
-
-
-
-    display(context, program_state) {                                                // display():  Called once per frame of animation
-
-
-        // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
-        if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
-
-            // Define the global camera and projection matrices, which are stored in program_state.  The camera
-            // matrix follows the usual format for transforms, but with opposite values (cameras exist as 
-            // inverted matrices).  The projection matrix follows an unusual format and determines how depth is 
-            // treated when projecting 3D points onto a plane.  The Mat4 functions perspective() and
-            // orthographic() automatically generate valid matrices for one.  The input arguments of
-            // perspective() are field of view, aspect ratio, and distances to the near plane and far plane.
-            program_state.set_camera(Mat4.translation(-10, 30, -95));
-        }
-        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 100);
-
-        // *** Lights: ***
-        const t = this.t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-
-
-        const light_position = Mat4.rotation(0, 1, 0, 0).times(vec4(0, -1, 1, 0));
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000000)];
-
-
-        // *** Game Logic ***
-
-        // ---- TETRIS ----
-        if (this.pause_tetris == false && this.playing_tetris == true) {
-            this.tetris_time = this.tetris_time + dt;
-
-            if (this.tetris_time > this.tickRate) {
-                this.tetris_time = 0;
-
-                if (this.game_manager.isFallingBlocks()) {
-                    this.game_manager.translateMovingBlocksDown();
-                    if (this.game_manager.getCollision()) {
-                        this.game_manager.changeBlocksToStatic();
-                        for (let i = 0; i < this.game_manager.getNumRows(); i++) {
-                            if (this.game_manager.checkRowIsSame(i)) {
-                                for (let j = 0; j < 4; j++) {
-                                    if (this.game_manager.checkRowIsSame(i)) {
-                                        this.game_manager.clearRow(i);
-                                    }
-                                    else {
-                                        break;
-                                    }
-                                }
-
-                            }
-                        }
-                        this.game_manager.setCollision(false);
-                    }
-                }
-                else {
-                    // Spawn block
-                    this.game_manager.generateShape();
-                }
-            }
-            this.tetrisGrid.displayGrid(context, program_state, Mat4.identity, this.game_manager.getGrid());
-        }
-
-
-
-        // ---- SNAKE -----
-        if (this.pause_snake == false && this.playing_snake == true) {
-            this.snake_game_manager.processTick(dt);
-            this.snake_game_manager.displayGrid(context, program_state, Mat4.identity);
-        }
-    }
-}
 
 // Class that handles game logic and contains game grid
-class GameManager {
-    constructor() {
+export class Tetris {
+    constructor(tRate) {
+
         // 20 x 10 grid layout
         this.GRID = [
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -177,7 +39,61 @@ class GameManager {
         this.COLUMNS = 10;
         // Collision Flag
         this.COLLISION = false;
+
+        //rendering
+        this.gridRenderer = new GridRenderer(this.ROWS + 1, this.COLUMNS, 3);
+        this.tickRate = tRate;
+        this.time = 0;
+        this.paused = false;
+
     }
+
+
+    //render
+    displayGrid(context, program_state, identity) {
+        let displayGrid = deepCopy(this.GRID);
+        //add a row at the bottom to represent the bottom of the game
+        displayGrid.push([8, 8, 8, 8, 8, 8, 8, 8, 8, 8]);
+        this.gridRenderer.displayGrid(context, program_state, identity, displayGrid);
+    }
+
+    //process timer
+    processTick(dt) {
+        if (this.paused)
+            return;
+
+        this.time = this.time + dt;
+        if (this.time > this.tickRate) {
+            this.time = 0;
+
+            if (this.isFallingBlocks()) {
+                this.translateMovingBlocksDown();
+                if (this.getCollision()) {
+                    this.changeBlocksToStatic();
+                    for (let i = 0; i < this.getNumRows(); i++) {
+                        if (this.checkRowIsSame(i)) {
+                            for (let j = 0; j < 4; j++) {
+                                if (this.checkRowIsSame(i)) {
+                                    this.clearRow(i);
+                                }
+                                else {
+                                    break;
+                                }
+                            }
+
+                        }
+                    }
+                    this.setCollision(false);
+                }
+            }
+            else {
+                // Spawn block
+                this.generateShape();
+            }
+        }
+
+    }
+
 
     // Accessor functions
     getCollision() {
@@ -595,6 +511,12 @@ class GameManager {
         let cInGrid = c >= 0 && c < this.COLUMNS;
         return rInGrid && cInGrid;
     }
+
+
+    changeTickRate(t) {
+        this.tickRate = t;
+    }
+
 }
 
 
