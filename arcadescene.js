@@ -103,7 +103,7 @@ export class ArcadeScene extends Scene {
 
 
     display(context, program_state) {                                                // display():  Called once per frame of animation
-
+        this.tetris_game_manager.paused = this.pause_tetris;
 
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {

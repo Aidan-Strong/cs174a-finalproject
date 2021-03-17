@@ -258,6 +258,10 @@ export class Tetris {
     // Translate moving blocks horizontally. Takes one argument direction (LEFT, RIGHT)
     translateMovingBlocksHorizontally(dir) {
 
+        if (this.paused)
+            return;
+
+
         //deep copy the grid
         let COPYGRID = deepCopy(this.GRID);
         for (let r = 0; r < this.ROWS; r++) {
@@ -460,6 +464,8 @@ export class Tetris {
 
 
     rotate() {
+        if (this.paused)
+            return;
 
         //find rotation point
         let rotationPoint = this.findRotation();
