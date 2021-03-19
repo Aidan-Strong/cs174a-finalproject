@@ -59,7 +59,8 @@ export class Snake {
 
         this.gridRenderer = new GridRenderer(this.ROWS, this.COLUMNS, scale);
 
-
+        this.collectSound = new Audio("sounds/tetris_clear.wav");
+        this.resetSound = new Audio("sounds/tetris_fail.wav");
 
         //tic rate
         this.time = 0;
@@ -78,6 +79,7 @@ export class Snake {
     // then it will add the old tail that was popped
     growSnake(row, column, tail) {
         if (this.GRID[row][column] == 3) {
+            this.collectSound.play();
             this.GRID[tail[0]][tail[1]] = 2;
             this.GRID[row][column] = 0;
             this.BODY.push(tail);
@@ -137,7 +139,7 @@ export class Snake {
     moveSnake(row, column) {
         let head = [row, column];
         if (this.checkCollision(row, column)) {
-
+            this.resetSound.play();
             this.resetGame();
             return;
         }
