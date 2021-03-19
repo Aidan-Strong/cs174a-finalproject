@@ -20,7 +20,7 @@ Both of these games are rendered on a custom `grid-renderer` class that displays
 
 ## Advanced Features:
 
-- Colission Detection
+- Collision Detection
 - Animations
 - Camera Transitions
 - User Input
