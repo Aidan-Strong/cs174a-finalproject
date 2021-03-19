@@ -53,6 +53,8 @@ export class Tetris {
         this.moveSound = new Audio("sounds/tetris_move.wav");
         this.resetSound = new Audio("sounds/tetris_fail.wav");
 
+        // row buffer
+        this.rowBuffer = [];
     }
 
 
@@ -68,8 +70,29 @@ export class Tetris {
     processTick(dt) {
         if (this.paused)
             return;
-       
         this.time = this.time + dt;
+
+        // cascade animation
+        if (this.time < this.tickRate && (this.tickRate - this.time) / 4 % 2) {
+            if (this.rowBuffer.length != 0) {
+                
+                if (JSON.stringify(this.GRID[this.rowBuffer[0]]) == JSON.stringify([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])) {
+                    this.clearRow(this.rowBuffer[0]);
+                    this.rowBuffer.shift();
+                    let temp = this.rowBuffer;
+                    console.log(temp);
+                }
+                else {
+                    for (let c = 0; c < this.COLUMNS; c++) {
+                        if (this.GRID[this.rowBuffer[0]][c] != 0) {
+                            this.GRID[this.rowBuffer[0]][c] = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         if (this.time > this.tickRate) {
             this.time = 0;
 
@@ -77,13 +100,13 @@ export class Tetris {
                 this.translateMovingBlocksDown();
                 if (this.getCollision()) {
                     this.changeBlocksToStatic();
-                    let rows_to_clear = [];
                     for (let i = 0; i < this.getNumRows(); i++) {
                         if (this.checkRowIsSame(i)) {
-                            rows_to_clear.push(i);
+                            this.rowBuffer.push(i);
+                            this.clearSound.play();
                         }
                     }
-                    if (rows_to_clear.length != 0) {
+                    /*if (rows_to_clear.length != 0) {
                         this.clearSound.play();
                     console.log(rows_to_clear);
                         while (rows_to_clear.length > 0) {
@@ -92,6 +115,7 @@ export class Tetris {
                             console.log("clear row " + row);
                         }
                     }
+                    */
                     this.setCollision(false);
                 }
             }
