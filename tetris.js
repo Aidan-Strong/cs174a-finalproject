@@ -46,6 +46,13 @@ export class Tetris {
         this.time = 0;
         this.paused = false;
 
+        // sounds
+        this.rotateSound = new Audio("sounds/tetris_rotate.wav");
+        this.clearSound = new Audio("sounds/tetris_clear.wav");
+        this.stackSound = new Audio("sounds/tetris_stack.wav");
+        this.moveSound = new Audio("sounds/tetris_move.wav");
+        this.resetSound = new Audio("sounds/tetris_fail.wav");
+
     }
 
 
@@ -61,7 +68,7 @@ export class Tetris {
     processTick(dt) {
         if (this.paused)
             return;
-
+       
         this.time = this.time + dt;
         if (this.time > this.tickRate) {
             this.time = 0;
@@ -70,23 +77,29 @@ export class Tetris {
                 this.translateMovingBlocksDown();
                 if (this.getCollision()) {
                     this.changeBlocksToStatic();
+                    let rows_to_clear = [];
                     for (let i = 0; i < this.getNumRows(); i++) {
                         if (this.checkRowIsSame(i)) {
-                            for (let j = 0; j < 4; j++) {
-                                if (this.checkRowIsSame(i)) {
-                                    this.clearRow(i);
-                                }
-                                else {
-                                    break;
-                                }
-                            }
-
+                            rows_to_clear.push(i);
+                        }
+                    }
+                    if (rows_to_clear.length != 0) {
+                        this.clearSound.play();
+                    console.log(rows_to_clear);
+                        while (rows_to_clear.length > 0) {
+                            let row = rows_to_clear.shift();
+                            this.clearRow(row);
+                            console.log("clear row " + row);
                         }
                     }
                     this.setCollision(false);
                 }
             }
             else {
+                if (this.checkGameOver()) {
+                    this.resetGame();
+                    this.resetSound.play();
+                }
                 // Spawn block
                 this.generateShape();
             }
@@ -230,6 +243,7 @@ export class Tetris {
                     this.GRID[r][c] *= -1;
             }
         }
+        this.stackSound.play();
     }
 
     // Check if all blocks at a given row is the same
@@ -242,7 +256,7 @@ export class Tetris {
         return true;
     }
 
-    // Clear bottom row and shift down all static rows down
+    // Clear bottom row and shift all static rows down
     // Only if all blocks at the bottom are the same color
     clearRow(row) {
         this.GRID.splice(row, 1);
@@ -257,7 +271,6 @@ export class Tetris {
 
     // Translate moving blocks horizontally. Takes one argument direction (LEFT, RIGHT)
     translateMovingBlocksHorizontally(dir) {
-
         //deep copy the grid
         let COPYGRID = deepCopy(this.GRID);
         for (let r = 0; r < this.ROWS; r++) {
@@ -303,8 +316,7 @@ export class Tetris {
             }
         }
         this.GRID = COPYGRID;
-
-
+        this.moveSound.cloneNode(true).play();
     }
 
     //can this block move horizontally
@@ -476,7 +488,6 @@ export class Tetris {
                     COPYGRID[r][c] = 0;
             }
         }
-
         //rotation bit
         for (let r = 0; r < this.ROWS; r++) {
             for (let c = 0; c < this.COLUMNS; c++) {
@@ -503,6 +514,7 @@ export class Tetris {
                 }
             }
         }
+        this.rotateSound.cloneNode(true).play();
         this.GRID = COPYGRID;
     }
 
@@ -517,6 +529,46 @@ export class Tetris {
         this.tickRate = t;
     }
 
+    checkGameOver() {
+        for (let c = 0; c < this.COLUMNS; c++) {
+            let flag = true;
+            for (let r = this.ROWS-1; r >= 1; r--) {
+                if (this.GRID[r][c] == 0) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    resetGame() {
+        this.GRID = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ];
+    }
 }
 
 
