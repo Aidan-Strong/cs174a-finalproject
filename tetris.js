@@ -472,6 +472,8 @@ export class Tetris {
 
 
     rotate() {
+        if (this.paused)
+            return;
 
         //find rotation point
         let rotationPoint = this.findRotation();
