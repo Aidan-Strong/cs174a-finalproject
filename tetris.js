@@ -33,6 +33,16 @@ export class Tetris {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         ]
+        this.NEXT = [
+            [8, 8, 8, 8, 8, 8, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 8, 8, 8, 8, 8, 8]
+        ]
+        this.NEXT_NUM = 0;
+
         // Number of Rows
         this.ROWS = 20;
         // Number of Columns
@@ -42,6 +52,7 @@ export class Tetris {
 
         //rendering
         this.gridRenderer = new GridRenderer(this.ROWS + 1, this.COLUMNS, scale);
+        this.nextRenderer = new GridRenderer(6, 7, scale);
         this.tickRate = tRate;
         this.time = 0;
         this.paused = false;
@@ -64,6 +75,11 @@ export class Tetris {
         //add a row at the bottom to represent the bottom of the game
         displayGrid.push([8, 8, 8, 8, 8, 8, 8, 8, 8, 8]);
         this.gridRenderer.displayGrid(context, program_state, identity, displayGrid);
+        
+    }
+
+    displayNext(context, program_state, translation) {
+        this.nextRenderer.displayGrid(context, program_state, translation, this.NEXT);
     }
 
     //process timer
@@ -170,47 +186,112 @@ export class Tetris {
     //will probably refactor this to do something different
     generateShape() {
         let NUM_SHAPES = 5;
-        //let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
-        let shape = 2;
+        let shape = Math.floor((Math.random() * NUM_SHAPES) + 1)
+        //let shape = 4;
         let middle = Math.floor(this.COLUMNS / 2);
-        switch (shape) {
-            //2x2 block
+        if (this.NEXT_NUM != 0)
+            shape = this.NEXT_NUM;
+        switch(shape) {
             case 1:
                 this.GRID[0][middle] = shape;
                 this.GRID[1][middle] = shape;
                 this.GRID[0][middle - 1] = shape;
                 this.GRID[1][middle - 1] = shape;
                 break;
-            //1x4 block
             case 2:
                 this.GRID[0][middle] = shape;
                 this.GRID[1][middle] = shape;
                 this.GRID[2][middle] = shape;
                 this.GRID[3][middle] = shape;
                 break;
-            //l-shape
             case 3:
                 this.GRID[0][middle] = shape;
                 this.GRID[1][middle] = shape;
                 this.GRID[1][middle - 1] = shape;
-                this.GRID[1][middle - 2] = shape;
+                this.GRID[1][middle - 2] = shape; 
                 break;
-            //s-block
             case 4:
                 this.GRID[0][middle] = shape;
                 this.GRID[0][middle - 1] = shape;
                 this.GRID[1][middle - 1] = shape;
                 this.GRID[1][middle - 2] = shape;
                 break;
-            //t-block
             case 5:
                 this.GRID[0][middle - 1] = shape;
                 this.GRID[1][middle] = shape;
                 this.GRID[1][middle - 1] = shape;
                 this.GRID[1][middle - 2] = shape;
                 break;
+        }
+        
+        shape = Math.floor((Math.random() * NUM_SHAPES) + 1);
+        switch (shape) {
+            //2x2 block
+            case 1:
+                this.clearNext();
+                this.NEXT[2][2] = shape;
+                this.NEXT[2][3] = shape;
+                this.NEXT[3][2] = shape;
+                this.NEXT[3][3] = shape;
+                this.NEXT_NUM = 1;
+              
+                break;
+            //1x4 block
+            case 2:
+                this.clearNext();
+                this.NEXT[1][3] = shape;
+                this.NEXT[2][3] = shape;
+                this.NEXT[3][3] = shape;
+                this.NEXT[4][3] = shape;
+                this.NEXT_NUM = 2;
+
+                break;
+
+            //l-shape
+            case 3:
+                this.clearNext();
+                this.NEXT[2][4] = shape;
+                this.NEXT[3][4] = shape;
+                this.NEXT[3][3] = shape;
+                this.NEXT[3][2] = shape;
+                this.NEXT_NUM = 3;
+
+                break;
+            //s-block
+            case 4:
+                this.clearNext();
+                this.NEXT[2][4] = shape;
+                this.NEXT[2][3] = shape;
+                this.NEXT[3][3] = shape;
+                this.NEXT[3][2] = shape;
+                this.NEXT_NUM = 4;
+
+               
+                break;
+            //t-block
+            case 5:
+                this.clearNext();
+                this.NEXT[3][2] = shape;
+                this.NEXT[3][3] = shape;
+                this.NEXT[3][4] = shape;
+                this.NEXT[2][3] = shape;
+                this.NEXT_NUM = 5;
+
+                break;
 
         }
+      
+    }
+
+    clearNext() {
+        this.NEXT = [
+            [8, 8, 8, 8, 8, 8, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 0, 0, 0, 0, 0, 8],
+            [8, 8, 8, 8, 8, 8, 8]
+        ]
     }
 
     // Shift all moving blocks (positive) down until
@@ -568,6 +649,8 @@ export class Tetris {
                 return true;
             }
         }
+        if (this.GRID[0][4] < 0 || this.GRID[0][5] < 0)
+            return true;
         return false;
     }
 

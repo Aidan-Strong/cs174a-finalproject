@@ -176,6 +176,14 @@ export class ArcadeScene extends Scene {
         //draw tetris board
         this.tetris_game_manager.displayGrid(context, program_state, Mat4.identity());
 
+        // draw the next block grid
+        let nextTransform = Mat4.identity();
+        nextTransform = nextTransform.times(Mat4.translation(15, -3, -2));
+        this.tetris_game_manager.displayNext(context, program_state, nextTransform);
+        nextTransform = nextTransform.times(Mat4.translation(0, 2, 0));
+        this.shapes.text.set_string("NEXT", context.context);
+        this.shapes.text.draw(context, program_state, nextTransform, this.text_image);
+
 
 
         // //draw the cabinet
