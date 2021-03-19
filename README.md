@@ -1,30 +1,35 @@
-# tiny-graphics.js
 
-This is a small, single file JavaScript utility.  It organizes WebGL programs to be object-oriented and minimally cluttered.  
 
-Writing code with raw JavaScript and WebGL can be repetitive and tedious.  Using frameworks like three.js can create an undesired separation between you and the raw JavaScript and WebGL and common graphics operations you want to learn.  Unlike other frameworks, tiny-graphics.js is purpose-built for education, has small source code, and teaches you how it is made.
+## Members
+Peter Sutarjo (705107945)
 
-This tiny library gives your WebGL program access to linear algebra routines, useful UI controls and readouts, and the drawing utilities needed by modern shader-based graphics.  It factors away the repetitive logic of GPU communication into re-usable objects.  The objects can be seamlessly shared between multiple WebGL contexts (drawing regions) on a web page.
+Aidan Strong (505419537)
 
-The tiny-graphics.js software library has accompanied UCLA Computer Science's 174a course (Intro to Computer Graphics) since 2016, replacing Edward Angel's supplemental code from his textbook "Interactive Computer Graphics: A Top-Down Approach with WebGL".  Compared to Angel's library, tiny-graphics.js offers more organization and functionality.
 
-This code library accompanies and supports a web project by the same author called "The Encyclopedia of Code", a crowd-sourced repository of WebGL demos and educational tutorials that uses an online editor.
 
-To run a sample using tiny-graphics.js, visit its GitHub Pages link: https://encyclopedia-of-code.github.io/tiny-graphics-js/
+## Introduction:
+For our final project we decided to replicate an oldschool arcade, by coding implementations of both Tetris and Snake (which are fully functional) in tiny-graphics. Players have access to both of these games, and are able to swap between them whenever they want. They also have controls that can pause, and change the speed of each game.
 
-To see all the demos and edit them:  Open the included "host.bat" or "host.command" file, then open localhost in your browser.  Open Developer Tools and create a workspace for your new folder.  Now you can edit the files, which is necessary to view the different demos.
+Tetris includes 5 unique, rotatable pieces that are spawned randomly, as well as animations when a "tetris" is completed. Additionally, we decided to add a "next-block" screen for players to know what was the next incoming shape. Finally, we added some sounds from the original tetris game.
 
-To select a demo, open and edit main-scene.js.  Assign your choice to the Main_Scene variable.  Your choices for scenes are:
+Snake randomly generates fruits for players to eat, while making sure they do not collide with themselves, or the walls of the grid. To replicate the original feel of snake, we also implemented some classic 8-bit noises.
 
-* Minimal_Webgl_Demo
-* Transforms_Sandbox
-* Axes_Viewer_Test_Scene
-* Inertia_Demo
-* Collision_Demo
-* Many_Lights_Demo
-* Obj_File_Demo
-* Text_Demo
-* Scene_To_Texture_Demo
-* Surfaces_Demo
+Both of these games are rendered on a custom `grid-renderer` class that displays the game screen in the world.
 
-The code comments in each file should help, especially if you look at the definition of Transforms_Sandbox.  So should the explanations that the demos print on the page.  Enjoy!
+
+
+## Advanced Features:
+
+- Colission Detection
+- Animations
+- Camera Transitions
+- User Input
+- Custom rendering
+
+
+
+## References:
+
+[Sounds](https://www.youtube.com/watch?v=Xm9O2iJLWxY)
+
+[Arcade Cabinet](https://sketchfab.com/3d-models/arcade-cabinet-5758fd87e207488db6f530a7b28eb447)
